@@ -603,6 +603,8 @@ class DefaultFetch
         Stats::Formula branchRate;
         /** Number of instruction fetched per cycle. */
         Stats::Formula rate;
+
+        Stats::Scalar numLimitedBWNotFetchedCycles;
     } fetchStats;
 };
 

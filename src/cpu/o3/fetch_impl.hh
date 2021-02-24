@@ -204,7 +204,8 @@ FetchStatGroup::FetchStatGroup(O3CPU *cpu, DefaultFetch *fetch)
     ADD_STAT(branchRate, "Number of branch fetches per cycle",
      branches / cpu->numCycles),
     ADD_STAT(rate, "Number of inst fetches per cycle",
-     insts / cpu->numCycles)
+     insts / cpu->numCycles),
+    ADD_STAT(numLimitedBWNotFetchedCycles, "the number of cycles that the instructions cannot be fetched due to the limited bandwidth even though there are available instructions. (fetch stage)")
 {
         icacheStallCycles
             .prereq(icacheStallCycles);
@@ -242,6 +243,8 @@ FetchStatGroup::FetchStatGroup(O3CPU *cpu, DefaultFetch *fetch)
             .prereq(icacheSquashes);
         tlbSquashes
             .prereq(tlbSquashes);
+        numLimitedBWNotFetchedCycles
+            .prereq(numLimitedBWNotFetchedCycles);
         nisnDist
             .init(/* base value */ 0,
               /* last value */ fetch->fetchWidth,
@@ -1350,6 +1353,9 @@ DefaultFetch<Impl>::fetch(bool &status_change)
         DPRINTF(Fetch, "[tid:%i] Done fetching, predicted branch "
                 "instruction encountered.\n", tid);
     } else if (numInst >= fetchWidth) {
+        if (numInst > fetchWidth || (fetchQueue[tid].size() < fetchQueueSize && !predictedBranch && !quiesce)) {
+            ++fetchStats.numLimitedBWNotFetchedCycles;
+        }
         DPRINTF(Fetch, "[tid:%i] Done fetching, reached fetch bandwidth "
                 "for this cycle.\n", tid);
     } else if (blkOffset >= fetchBufferSize) {
